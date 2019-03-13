@@ -131,7 +131,7 @@
 	<main>
     <section id="top250">
       <div class="container">       
-<!--         <div class="item">
+<!--    <div class="item">
           <a href="#">
             <div class="cover">
               <img src="http://img7.doubanio.com/view/movie_poster_cover/spst/public/p513344864.png" alt="">
@@ -173,9 +173,11 @@
 	</footer>
 <script>
   var Helpers = {
+  	//检测是否到达底部
   	isToBottom: function($viewport, $content) {
       return $viewport.height() + $viewport.scrollTop() + 30 > $content.height() 
     },
+    //拼接DOM
   	createNode:function(movie){
   		var $node = $(`
 					<div class="item">
@@ -204,177 +206,158 @@
 			return $node
   	}
   } 
-  // var ImgShow = {
-  // 	watchScroll()	
-  // 	$(window).on('scroll',function(){
-	 //  	watchScroll()
-	 //  })
-	 //  function watchScroll(){
-  // 		$('.container img').not('[data-loading]').each(function(){
-	 //  		if( isShow($(this)) ){
-	 //  			loadImg($(this))
-	 //  		}
-	 //  	}
-  // 	}
-	 //  function isShow($node){
-	 //  	return $node.offset().top <= $(window).height() + $(window).scrollTop()
-	 //  }
-	 //  function loadImg($img){
-	 //  	$img.attr('src',$img.attr('data-src'))
-	 //  	$img.attr('data-loading',1)
-	 //  }
-  // }
-	  
+  //Top250页面
+	var Top250 = {
+	  init: function(){
+	    var _this = this
+	    this.$container = $('#top250')
+	    this.$content = this.$container.find('.container')
+	    this.page = 0
+	    this.count = 10
+	    this.isFinshed = false
+	    this.isLoading = false
+	    this.bind()
+	    this.getData(function(data){
+	      _this.renderData(data)
+	      _this.page++
+	    })
+	  },
+	  bind: function(){
+	    var _this = this
+	    //监听页面滚动
+	    this.$container.on('scroll', function(){
+	      if(Helpers.isToBottom(_this.$container, _this.$content) && !_this.isFinshed && !_this.isLoading){
+	        _this.getData(function(data){
+	          _this.renderData(data)
+	          _this.page++
+	          if(_this.page * _this.count > data.total) {
+	            _this.isFinshed = true
+	          }
+	        })
+	      }
+	    })
+	  },
+	  //获取页面信息
+	  getData: function(callback){
+	    var _this = this
+	    this.isLoading = true
+	    this.$container.find('.loading').show(400)
+	    $.ajax({
+	      url: '//api.douban.com/v2/movie/top250',
+	      data: {
+	        start: this.count*this.page,
+	        count: this.count
+	      },
+	      dataType: 'jsonp'
+	    }).done(function(ret){
+	      _this.isLoading = false
+	      _this.$container.find('.loading').hide(400)
+	      callback(ret)
+	    })
+	  },
+	  //获取数据后拼接DOM并放进标签内
+	  renderData(data){
+	    var _this = this
+	    data.subjects.forEach(function(item){
+	      var $node = Helpers.createNode(item)
+	      _this.$content.append($node)    
+	    })
+	  }
+	}
+	//北美排行榜页面
+	var UsBoard = {
+	  init: function(){
+	    var _this = this
+	    this.$container = $('#beimei')
+	    this.$content = this.$container.find('.container')
+	    this.getData(function(data){
+	      _this.renderData(data)
+	    })
+	  },
+	  getData: function(callback){
+	    $.ajax({
+	      url: '//api.douban.com/v2/movie/us_box',
+	      data: {
+	        start: 0,
+	        count: 10
+	      },
+	      dataType: 'jsonp'
+	    }).done(function(ret){
+	      callback(ret)
+	    })
+	  },
+	  renderData(data){
+	    var _this = this
+	    data.subjects.forEach(function(item){
+	      var $node = Helpers.createNode(item.subject)  
+	      _this.$content.append($node)    
+	    })
+	  }
+	}
+	//搜索页面
+  var Search = {
+    init: function() {
+      this.page = 0
+      this.count = 10
+      this.isFinshed = false
+      this.isLoading = false
+      this.$container = $('#search')
+      this.$content = this.$container.find('.container')
+      this.bind()
+    },
 
-
-var Top250 = {
-  init: function(){
-    var _this = this
-    this.$container = $('#top250')
-    this.$content = this.$container.find('.container')
-    this.page = 0
-    this.count = 10
-    this.isFinshed = false
-    this.isLoading = false
-    this.bind()
-    this.getData(function(data){
-      _this.renderData(data)
-      _this.page++
-    })
-  },
-  bind: function(){
-    var _this = this
-    this.$container.on('scroll', function(){
-      if(Helpers.isToBottom(_this.$container, _this.$content) && !_this.isFinshed && !_this.isLoading){
+    bind: function() {
+      var _this = this
+      this.$container.find('.search-area .button').on('click', function(){
         _this.getData(function(data){
           _this.renderData(data)
-          _this.page++
-          if(_this.page * _this.count > data.total) {
-            _this.isFinshed = true
-          }
         })
-      }
-    })
-  },
-  getData: function(callback){
-    var _this = this
-    this.isLoading = true
-    this.$container.find('.loading').show(400)
-    $.ajax({
-      url: '//api.douban.com/v2/movie/top250',
-      data: {
-        start: this.count*this.page,
-        count: this.count
-      },
-      dataType: 'jsonp'
-    }).done(function(ret){
-      _this.isLoading = false
-      _this.$container.find('.loading').hide(400)
-      callback(ret)
-    })
-  },
-  renderData(data){
-    var _this = this
-    data.subjects.forEach(function(item){
-      var $node = Helpers.createNode(item)
-      _this.$content.append($node)    
-    })
-  }
-}
+      })
+      this.$container.find('.search-area input').on('keyup', function(e){
+        if(e.key === 'Enter') {
+          _this.getData(function(data){
+          _this.renderData(data)
+        })
+        }
+      })
 
-var UsBoard = {
-  init: function(){
-    var _this = this
-    this.$container = $('#beimei')
-    this.$content = this.$container.find('.container')
-    this.getData(function(data){
-      _this.renderData(data)
-    })
-  },
-  getData: function(callback){
-    $.ajax({
-      url: '//api.douban.com/v2/movie/us_box',
-      data: {
-        start: 0,
-        count: 10
-      },
-      dataType: 'jsonp'
-    }).done(function(ret){
-      callback(ret)
-    })
-  },
-  renderData(data){
-    var _this = this
-    data.subjects.forEach(function(item){
-      var $node = Helpers.createNode(item.subject)  
-      _this.$content.append($node)    
-    })
-  }
-}
-
-    var Search = {
-      init: function() {
-        this.page = 0
-        this.count = 10
-        this.isFinshed = false
-        this.isLoading = false
-        this.$container = $('#search')
-        this.$content = this.$container.find('.container')
-        this.bind()
-      },
-
-      bind: function() {
-        var _this = this
-        this.$container.find('.search-area .button').on('click', function(){
+      this.$container.on('scroll', function(){
+        if(Helpers.isToBottom(_this.$container, _this.$container.find('.wrap')) && !_this.isFinshed && !_this.isLoading){
           _this.getData(function(data){
             _this.renderData(data)
+            _this.page++
+            if(_this.page * _this.count > data.total) {
+              _this.isFinshed = true
+            }
           })
-        })
-        this.$container.find('.search-area input').on('keyup', function(e){
-          if(e.key === 'Enter') {
-            _this.getData(function(data){
-            _this.renderData(data)
-          })
-          }
-        })
+        }
+      })
+    },
 
-        this.$container.on('scroll', function(){
-          if(Helpers.isToBottom(_this.$container, _this.$container.find('.wrap')) && !_this.isFinshed && !_this.isLoading){
-            _this.getData(function(data){
-              _this.renderData(data)
-              _this.page++
-              if(_this.page * _this.count > data.total) {
-                _this.isFinshed = true
-              }
-            })
-          }
-        })
-      },
+    getData: function(callback){
+      var _this = this
+      var keyword = this.$container.find('.search-area input').val()
+      this.isLoading = true
+      $.ajax({
+        url: 'http://api.douban.com/v2/movie/search',
+        data: {
+          q: keyword
+        },
+        dataType: 'jsonp'
+      }).done(function(ret){
+        _this.isLoading = false
+        callback(ret)
+      })
+    },
 
-      getData: function(callback){
-        var _this = this
-        var keyword = this.$container.find('.search-area input').val()
-        this.isLoading = true
-        $.ajax({
-          url: 'http://api.douban.com/v2/movie/search',
-          data: {
-            q: keyword
-          },
-          dataType: 'jsonp'
-        }).done(function(ret){
-          _this.isLoading = false
-          callback(ret)
-        })
-      },
-
-      renderData(data){
-        var _this = this
-        data.subjects.forEach(function(item){
-          var $node = Helpers.createNode(item)
-          _this.$content.append($node)    
-        })
-      }
+    renderData(data){
+      var _this = this
+      data.subjects.forEach(function(item){
+        var $node = Helpers.createNode(item)
+        _this.$content.append($node)    
+      })
     }
+  }
 	//footer切换
   var Paging = {
     init: function(){
